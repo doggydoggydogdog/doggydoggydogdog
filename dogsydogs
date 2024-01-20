@@ -1,0 +1,98 @@
+import numpy as np
+import cv2
+
+
+#Define object specific variables  
+dist = 30
+focal = 395 #390
+pixels = 21
+width = 1.6
+
+
+#find the distance from then camera
+def get_dist(rectange_params,image,fontColorMat):
+    #find no of pixels covered
+    pixels = rectange_params[1][0]
+    print(pixels)
+    #calculate distance
+    dist = (width*focal)/pixels
+    
+    #Wrtie n the image
+    image = cv2.putText(image, 'Distance from Camera in CM :', (fontColorMat[0][0],fontColorMat[0][1]), font,  
+       1, (fontColorMat[1][0],fontColorMat[1][1],fontColorMat[1][2]), 2, cv2.LINE_AA)
+
+    image = cv2.putText(image, str(dist), (fontColorMat[2][0],fontColorMat[2][1]), font,  
+       fontScale, (fontColorMat[1][0],fontColorMat[1][1],fontColorMat[1][2]), 1, cv2.LINE_AA)
+
+    return image
+
+#Extract Frames 
+cap = cv2.VideoCapture(0)
+
+
+#basic constants for opencv Functs
+kernel = np.ones((3,3),'uint8')
+font = cv2.FONT_HERSHEY_SIMPLEX 
+fontScale = 0.6 
+thickness = 2
+
+#org = (0,20)  #fontColorMat0
+#color = (0, 0, 255) #fontColorMat1
+#fontColorMat[2] = (110,50)
+
+hsvMatYellow = [21,141,212,33,255,255]
+fontMatGreen = [[0,80],[0,255,0],[110,110]] #Colors arent right
+
+hsvMatBlue = [100,144,154,113,255,199]
+fontMatRed = [[0,20],[0,0,255],[110,50]] #it1 [[0,20],[255,0,0],[110,50]] Colors arent right
+
+def drawRectangle(boxColorMat, fontMat, hsvMat, hsvImage, Image):
+    #predefined mask for yellow rubick colour detection
+    lower = np.array([hsvMat[0], hsvMat[1], hsvMat[2]])
+    upper = np.array([hsvMat[3], hsvMat[4], hsvMat[5]])
+    mask = cv2.inRange(hsvImage, lower, upper)
+
+
+    #Remove Extra garbage from image
+    d_img = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel,iterations = 5)
+
+
+    #find the histogram
+    #_,cont,hei = cv2.findContours(d_img,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    cont,hei = cv2.findContours(d_img,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    cont = sorted(cont, key = cv2.contourArea, reverse = True)[:1]
+
+    for cnt in cont:
+        #check for contour area
+        if (cv2.contourArea(cnt)>100 and cv2.contourArea(cnt)<306000):
+
+            #Draw a rectange on the contour
+            rect = cv2.minAreaRect(cnt)
+            box = cv2.boxPoints(rect) 
+            box = np.int0(box)
+            cv2.drawContours(Image,[box], -1,(boxColorMat[0],boxColorMat[1],boxColorMat[2]),3)
+            
+            Image = get_dist(rect,Image,fontMat)
+    return hsvImage, Image
+
+
+cv2.namedWindow('Object Dist Measure ',cv2.WINDOW_NORMAL)
+cv2.resizeWindow('Object Dist Measure ', 700,600)
+
+
+#loop to capture video frames
+while True:
+    ret, img = cap.read()
+
+    hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+
+
+    hsv_img, img = drawRectangle(fontMatGreen[1],fontMatGreen,hsvMatYellow,hsv_img,img)
+    hsv_img, img = drawRectangle(fontMatRed[1],fontMatRed,hsvMatBlue,hsv_img,img)
+
+    cv2.imshow('Object Dist Measure ',img)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cv2.destroyAllWindows()
