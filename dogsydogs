@@ -96,3 +96,139 @@ while True:
         break
 
 cv2.destroyAllWindows()
+
+##############################################################################################
+
+import cv2
+import glob
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+
+height = 500
+width = 700
+
+def onTrack1(val):
+    global hueLow 
+    hueLow = val
+    print('Hue Low', hueLow)
+def onTrack2(val):
+    global hueHigh
+    hueHigh = val
+    print('Hue High', hueHigh)
+def onTrack3(val):
+    global satLow 
+    satLow = val
+    print('Sat Low', satLow)
+def onTrack4(val):
+    global satHigh 
+    satHigh = val
+    print('Sat High', satHigh)
+def onTrack5(val):
+    global valLow 
+    valLow = val
+    print('Val Low', valLow)
+def onTrack6(val):
+    global valHigh 
+    valHigh = val
+    print('Val High', valHigh)
+
+def onTrack7(val):
+    global hueLow1 
+    hueLow1 = val
+    print('Hue Low1', hueLow1)
+def onTrack8(val):
+    global hueHigh1
+    hueHigh1 = val
+    print('Hue High1', hueHigh1)
+def onTrack9(val):
+    global satLow1 
+    satLow1 = val
+    print('Sat Low1', satLow1)
+def onTrack10(val):
+    global satHigh1 
+    satHigh1 = val
+    print('Sat High1', satHigh1)
+def onTrack11(val):
+    global valLow1 
+    valLow1 = val
+    print('Val Low1', valLow1)
+def onTrack12(val):
+    global valHigh1 
+    valHigh1 = val
+    print('Val High1', valHigh1)
+
+cv2.namedWindow('myTrackerA')
+cv2.moveWindow('myTrackerA',640,0)
+
+cv2.namedWindow('myTrackerB')
+cv2.moveWindow('myTrackerB',640,0)
+
+hueLow=10
+hueHigh=20
+satLow=10
+satHigh=250
+valLow=10
+valHigh=250
+
+hueLow1=10
+hueHigh1=20
+satLow1=10
+satHigh1=250
+valLow1=10
+valHigh1=250
+
+cv2.createTrackbar('Hue Low','myTrackerA',10,179,onTrack1)
+cv2.createTrackbar('Hue High','myTrackerA',20,179,onTrack2)
+cv2.createTrackbar('Sat Low','myTrackerA',10,255,onTrack3)
+cv2.createTrackbar('Sat High','myTrackerA',250,255,onTrack4)
+cv2.createTrackbar('Val Low','myTrackerA',10,255,onTrack5)
+cv2.createTrackbar('Val High','myTrackerA',250,255,onTrack6)
+
+cv2.createTrackbar('Hue Low','myTrackerB',10,179,onTrack7)
+cv2.createTrackbar('Hue High','myTrackerB',20,179,onTrack8)
+cv2.createTrackbar('Sat Low','myTrackerB',10,255,onTrack9)
+cv2.createTrackbar('Sat High','myTrackerB',250,255,onTrack10)
+cv2.createTrackbar('Val Low','myTrackerB',10,255,onTrack11)
+cv2.createTrackbar('Val High','myTrackerB',250,255,onTrack12)
+
+cap = cv2.VideoCapture(0)
+
+
+while True:
+    ret, frame = cap.read()
+    frameHSV=cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+    
+    lowerBoundA=np.array([hueLow,satLow,valLow])
+    upperBoundA=np.array([hueHigh,satHigh,valHigh])
+    lowerBoundB=np.array([hueLow1,satLow1,valLow1])
+    upperBoundB=np.array([hueHigh1,satHigh1,valHigh1])
+    
+    myMaskA=cv2.inRange(frameHSV,lowerBoundA,upperBoundA)
+    myMaskA_ = Image.fromarray(myMaskA)
+    myMaskB=cv2.inRange(frameHSV,lowerBoundB,upperBoundB)
+    myMaskB_ = Image.fromarray(myMaskB)
+    
+    bbox1 = myMaskA_.getbbox()
+    if bbox1 is not None:
+        x1, y1, x2, y2 = bbox1
+        frame = cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 5)
+    bbox2 = myMaskB_.getbbox()
+    if bbox2 is not None:
+        x1, y1, x2, y2 = bbox2
+        frame = cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 5)
+        
+    frameSmall=cv2.resize(frame,(int(width/2),int(height/2)))
+    
+    myMaskASmall=cv2.resize(myMaskA,(int(width/2),int(height/2)))
+    myMaskBSmall=cv2.resize(myMaskB,(int(width/2),int(height/2)))
+    
+    cv2.imshow('my mask A',myMaskASmall)
+    cv2.imshow('my mask B',myMaskBSmall)
+    
+    cv2.imshow('video cap',frameSmall)
+    if cv2.waitKey(1) & 0xff==ord('q'):
+        break
+    
+cv2.destroyAllWindows()
+
